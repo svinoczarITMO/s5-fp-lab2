@@ -1,4 +1,4 @@
-(ns rb-bag-property-test
+(ns bag-property-test
   (:require [clojure.test :refer [deftest is run-tests]]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
