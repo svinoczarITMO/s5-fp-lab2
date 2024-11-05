@@ -1,0 +1,16 @@
+{:paths ["src" "test"]
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        org.clojure/test.check {:mvn/version "1.1.1"}
+        lambdaisland/kaocha {:mvn/version "1.0.887"}}
+ 
+ :aliases
+ {:test {:main-opts ["-m" "kaocha.runner"]}
+
+  :lint {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2023.05.26"}}
+         :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test"]}
+
+  :format {:extra-deps {cljfmt/cljfmt {:mvn/version "0.9.2"}}
+           :main-opts ["-m" "cljfmt.main" "check"]}
+
+  :format-fix {:extra-deps {cljfmt/cljfmt {:mvn/version "0.9.2"}}
+               :main-opts ["-m" "cljfmt.main" "fix"]}}}

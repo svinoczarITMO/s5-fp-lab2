@@ -29,5 +29,5 @@ jobs:
       run: clojure -A:format
 
     - name: Run tests
-      run: clojure -A:test
+      run: clojure -M test/bag_test.clj && clojure -M test/bag_property_test.clj
 

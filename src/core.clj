@@ -1,5 +1,5 @@
 (ns core
-  (:refer-clojure :exclude [map]))
+  (:refer-clojure :exclude [remove map]))
 
 (defrecord RBNode [value color left right parent])
 
@@ -23,13 +23,15 @@
 (defn create-node [value]
   (->RBNode value :red nil nil nil))
 
-(defn inorder-traversal [node]
-  (if node
-    (concat 
-      (inorder-traversal (:left node))
-      [(:value node)]
-      (inorder-traversal (:right node)))
-    []))
+(defn inorder-traversal [tree-or-node]
+  (if (instance? RedBlackTree tree-or-node)
+    (inorder-traversal (:root tree-or-node))
+    (if tree-or-node
+      (concat 
+       (inorder-traversal (:left tree-or-node))
+       [(:value tree-or-node)]
+       (inorder-traversal (:right tree-or-node)))
+      [])))
 
 (defn find-min [node]
   (if (nil? (:left node))
@@ -41,7 +43,7 @@
     new-node
     (let [parent-value (:value root)
           new-value (:value new-node)]
-      (if (< new-value parent-value)
+      (if (< (compare new-value parent-value) 0)
         (let [new-left (insert-bst (:left root) new-node)]
           (assoc root 
                  :left new-left
@@ -111,7 +113,7 @@
                 (assoc-in [:right :color] :black))))))))
 
 
-;; ---------- delete functions ---------- 
+;; ---------- remove functions ---------- 
 
 ;; Балансирова для случая 
 ;;        Black
@@ -167,7 +169,7 @@
                 (assoc :color :black))))))
 
 ;; Функция для перекрашивания узлов 
-(defn balance-delete [node]
+(defn balance-remove [node]
       (cond
         (= (:color node) :red) 
         node
@@ -184,47 +186,44 @@
           (balance-double-black node))))
 
 ;; Функция непосредственно для удаления узла
-(defn delete-node [node value]
-  (cond
-    (nil? node) 
+(defn remove-node [node value]
+  (if (nil? node)
     nil
-
-    (< value (:value node))
-    (let [new-left (delete-node (:left node) value)]
-      (if (= (:color node) :black)
-        (balance-delete (assoc node :left new-left))
-        (assoc node :left new-left)))
-
-    (> value (:value node))
-    (let [new-right (delete-node (:right node) value)]
-      (if (= (:color node) :black)
-        (balance-delete (assoc node :right new-right))
-        (assoc node :right new-right)))
-
-    :else
-    (cond
-      (and (nil? (:left node)) (nil? (:right node)))
-      nil
-      
-      (nil? (:left node))
-      (let [child (:right node)]
-        (if (= (:color node) :black)
-          (balance-delete (assoc child :color :black))
-          child))
-      
-      (nil? (:right node))
-      (let [child (:left node)]
-        (if (= (:color node) :black)
-          (balance-delete (assoc child :color :black))
-          child))
-      
-      :else
-      (let [successor (find-min (:right node))
-            new-node (assoc node :value (:value successor))
-            new-right (delete-node (:right new-node) (:value successor))]
-        (if (= (:color new-node) :black)
-          (balance-delete (assoc new-node :right new-right))
-          (assoc new-node :right new-right))))))
+    (let [cmp (compare value (:value node))]
+      (cond
+        (< cmp 0) 
+        (let [new-left (remove-node (:left node) value)]
+          (if (= new-left (:left node))
+            node
+            (balance-remove (assoc node :left new-left))))
+        
+        (> cmp 0) 
+        (let [new-right (remove-node (:right node) value)]
+          (if (= new-right (:right node))
+            node
+            (balance-remove (assoc node :right new-right))))
+        
+        :else 
+        (cond
+          (nil? (:left node)) 
+          (let [right (:right node)]
+            (if right (assoc right :parent (:parent node)) nil))
+          
+          (nil? (:right node)) 
+          (let [left (:left node)]
+            (if left (assoc left :parent (:parent node)) nil))
+          
+          :else 
+          (let [successor (find-min (:right node))
+                new-right (remove-node (:right node) (:value successor))]
+            (balance-remove 
+             (-> successor
+                 (assoc :left (:left node)
+                        :right new-right
+                        :color (:color node)
+                        :parent (:parent node))
+                 (update :left #(if % (assoc % :parent successor) %))
+                 (update :right #(if % (assoc % :parent successor) %))))))))))
 
 
 ;; ============ MAIN FUNCTIONS =============
@@ -233,18 +232,20 @@
 (defn insert [tree value]
   (let [new-node (create-node value)]
     (if (nil? (:root tree))
-      (->RedBlackTree (assoc new-node :color :black))
+      (do
+        (->RedBlackTree (assoc new-node :color :black)))
       (let [new-root (insert-bst (:root tree) new-node)
             fixed-root (balancing new-root)]
         (->RedBlackTree fixed-root)))))
 
 ;; • Удаление элементов;
-(defn delete [tree value]
-    (let [new-root (delete-node (:root tree) value)] 
-      (->RedBlackTree 
-       (if new-root 
-         (assoc new-root :color :black) 
-         nil))))
+(defn remove [tree value]
+  (if-let [root (:root tree)]
+    (let [new-root (remove-node root value)]
+      (if (nil? new-root)
+        (->RedBlackTree nil)
+        (->RedBlackTree (assoc new-root :color :black))))
+    tree)) 
 
 ;; • Отображение (map);
 (defn map [f tree]
@@ -274,7 +275,6 @@
             (if (nil? node)
               init
               (f (:value node)
-                 (fold-node (:left node))
                  (fold-node (:right node)))))]
     (fold-node (:root tree))))
 
@@ -288,5 +288,10 @@
                 (reduce insert target-tree values))))]
     (insert-all tree1 tree2)))
 
-;; Нейтральный элемент (пустое дерево)
+;; • Нейтральный элемент (пустое дерево)
 (def empty-tree (->RedBlackTree nil))
+
+;; • Фильтрация;
+(defn filter-tree [pred tree]
+  (let [filtered-values (filter pred (inorder-traversal tree))]
+    (reduce (fn [acc val] (insert acc val)) empty-tree filtered-values)))
