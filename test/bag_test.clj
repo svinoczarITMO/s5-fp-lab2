@@ -1,7 +1,8 @@
 (ns bag-test
   (:require [clojure.test :refer :all]
             [bag :refer :all]
-            [core :as tree]))
+            [core :as tree]
+            [clojure.string :as str]))
 
 (deftest test-add-integers
   (let [bag (empty-bag)
@@ -97,7 +98,7 @@
   (let [bag (-> (empty-bag)
                 (add "f")
                 (add "p"))
-        mapped-bag (tree/map clojure.string/upper-case (:tree bag))]
+        mapped-bag (tree/map str/upper-case (:tree bag))]
     (is (= (tree/inorder-traversal mapped-bag) ["F" "P"]))))
 
 (run-tests)
