@@ -1,2 +1,8 @@
 *.txt
 .cpcache
+lab2/doc/*
+lab2/.gitignore
+lab2/resources/
+lab2/*.md
+lab2/LICENSE
+.DS_Store

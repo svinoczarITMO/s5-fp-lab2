@@ -44,13 +44,8 @@
 
 ```clojure
 (defn insert [tree value]
-  (let [new-node (create-node value)]
-    (if (nil? (:root tree))
-      (do
-        (->RedBlackTree (assoc new-node :color :black)))
-      (let [new-root (insert-bst (:root tree) new-node)
-            fixed-root (balancing new-root)]
-        (->RedBlackTree fixed-root)))))
+  (balancing (assoc tree :root (insert-bst (:root tree) (create-node value)))))
+
 ```
 
 ### Удаление элемента
@@ -59,9 +54,11 @@
 
 ```clojure
 (defn remove [tree value]
-  (if-let [new-root (remove-node (:root tree) value)]
-    (->RedBlackTree (assoc new-root :color :black))
-    (->RedBlackTree nil)))
+  (if-let [root (:root tree)]
+    (if (nil? (remove-node root value))
+      (->RedBlackTree nil)
+      (->RedBlackTree (assoc (remove-node root value) :color :black)))
+    tree))
 ```
 
 ### Фильтрация
@@ -70,28 +67,7 @@
 
 ```clojure
 (defn filter-tree [pred tree]
-  (letfn [(filter-node [node]
-            (if (nil? node)
-              nil
-              (if (pred (:value node))
-                (let [new-node (->RBNode (:value node) (:color node)
-                                        (filter-node (:left node))
-                                        (filter-node (:right node))
-                                        (:parent node))]
-                  (balancing new-node))
-                (let [left-result (filter-node (:left node))
-                      right-result (filter-node (:right node))]
-                  (cond
-                    (and left-result right-result) 
-                    (merge-trees (->RedBlackTree left-result) 
-                                (->RedBlackTree right-result))
-                    
-                    left-result left-result
-                    right-result right-result
-                    :else nil)))))]
-    (if-let [filtered-root (filter-node (:root tree))]
-      (->RedBlackTree (assoc filtered-root :color :black))
-      empty-tree)))
+  (reduce (fn [acc val] (insert acc val)) empty-tree (filter pred (inorder-traversal tree))))
 ```
 
 ### Отображение (map)
@@ -150,11 +126,11 @@
 
 ### Unit Testing
 
-Для тестирования основных функций были реализованы следующие [тесты](test/bag-test.clj).
+Для тестирования основных функций были реализованы следующие [тесты](lab2/test/bag_test.clj).
 
 ### Property-Based Testing
 
-Для тестирования свойств были реализованы следующие [тесты](test/bag-property-test.clj).
+Для тестирования свойств были реализованы следующие [тесты](lab2/test/bag_property_test.clj).
 
 ## Выводы
 

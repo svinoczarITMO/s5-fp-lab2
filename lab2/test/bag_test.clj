@@ -1,6 +1,6 @@
 (ns bag-test
-  (:require [clojure.test :refer :all]
-            [bag :refer :all]
+  (:require [clojure.test :refer [deftest is run-tests]]
+            [bag :refer [add empty-bag filter-bag fold-left fold-right get-contents merge-bags remove-bag]]
             [core :as tree]
             [clojure.string :as str]))
 
@@ -15,19 +15,17 @@
     (is (= (get-contents updated-bag) ["func"]))))
 
 (deftest test-remove-integers
-  (let [bag (empty-bag)
-        updated-bag (-> bag
-                       (add 1)
-                       (add 2)
-                       (remove-bag 1))]
+  (let [bag (-> (empty-bag)
+                (add 1)
+                (add 2))
+        updated-bag (remove-bag bag 1)]
     (is (= (get-contents updated-bag) [2]))))
 
 (deftest test-remove-strings
-  (let [bag (empty-bag)
-        updated-bag (-> bag
-                       (add "func")
-                       (add "prog")
-                       (remove-bag "func"))]
+  (let [bag (-> (empty-bag)
+                (add "func")
+                (add "prog"))
+        updated-bag (remove-bag bag "func")]
     (is (= (get-contents updated-bag) ["prog"]))))
 
 (deftest test-merge-integers

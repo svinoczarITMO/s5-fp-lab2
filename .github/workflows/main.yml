@@ -21,13 +21,13 @@ jobs:
 
     - name: Install clj-kondo
       run: npm install -g clj-kondo
-
-    - name: Lint
-      run: clojure -A:lint
-
+      
     - name: Format 
-      run: clojure -A:format
+      run: cd lab2/ && clojure -M:format
+    
+    - name: Lint
+      run: cd lab2/ && clojure -M:lint
 
     - name: Run tests
-      run: clojure -M test/bag_test.clj && clojure -M test/bag_property_test.clj
+      run: cd lab2/ && clojure -M:test
 
