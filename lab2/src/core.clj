@@ -7,14 +7,16 @@
 ;; =============== SUPPORT FUNCTIONS ===============
 
 (defn grandparent [node]
-  (if (nil? (:parent node)) nil
-      (:parent (:parent node))))
+  (if (nil? (:parent node))
+    nil
+    (:parent (:parent node))))
 
 (defn sibling [node]
-  (if (nil? (:parent node)) nil
-      (if (= node (:left (:parent node)))
-        (:right (:parent node))
-        (:left (:parent node)))))
+  (if (nil? (:parent node))
+    nil
+    (if (= node (:left (:parent node)))
+      (:right (:parent node))
+      (:left (:parent node)))))
 
 (defn uncle [node]
   (sibling (:parent node)))
@@ -51,61 +53,56 @@
                :parent root)))))
 
 ;; ---------- balancing functions ----------
+
 (defn rotate-left [node]
-  (let [right-child (:right node)
-        right-left (:left right-child)]
-    (-> right-child
-        (assoc :left (assoc node :right right-left))
-        (assoc :parent (:parent node)))))
+  (-> (:right node)
+      (assoc :left (assoc node :right (:left (:right node))))
+      (assoc :parent (:parent node))))
 
 (defn rotate-right [node]
-  (let [left-child (:left node)
-        left-right (:right left-child)]
-    (-> left-child
-        (assoc :right (assoc node :left left-right))
-        (assoc :parent (:parent node)))))
+  (-> (:left node)
+      (assoc :right (assoc node :left (:right (:left node))))
+      (assoc :parent (:parent node))))
 
 (defn balancing [node]
-  (let [parent (:parent node)
-        uncle-node (uncle node)]
-    (cond
-      ;; 1. Узел – корень
-      (nil? parent)
-      (assoc node :color :black)
+  (cond
+    ;; 1. Узел – корень
+    (nil? (:parent node))
+    (assoc node :color :black)
 
-      ;; 2. Родительский узел – черный
-      (= (:color parent) :black)
-      node
+    ;; 2. Родительский узел – черный
+    (= (:color (:parent node)) :black)
+    node
 
-      ;; 3. Узел "дядя" – красный
-      (and uncle-node (= (:color uncle-node) :red))
-      (-> node
-          (assoc-in [:parent :color] :black)
-          (assoc-in [:uncle :color] :black)
-          (assoc-in [:grandparent :color] :red)
-          (balancing))
+    ;; 3. Узел "дядя" – красный
+    (and (uncle node) (= (:color (uncle node)) :red))
+    (-> node
+        (assoc-in [:parent :color] :black)
+        (assoc-in [:uncle :color] :black)
+        (assoc-in [:grandparent :color] :red)
+        (balancing))
 
-      ;; 4-5. Узел "дядя" черный или nil
-      :else
-      (let [is-left (= node (:left parent))
-            is-parent-left (= parent (:left (grandparent node)))]
-        (cond
-          (and is-parent-left (not is-left))
-          (balancing (rotate-left parent))
+    ;; 4-5. Узел "дядя" черный или nil
+    :else
+    (let [is-left (= node (:left (:parent node)))
+          is-parent-left (= (:parent node) (:left (grandparent node)))]
+      (cond
+        (and is-parent-left (not is-left))
+        (balancing (rotate-left (:parent node)))
 
-          (and (not is-parent-left) is-left)
-          (balancing (rotate-right parent))
+        (and (not is-parent-left) is-left)
+        (balancing (rotate-right (:parent node)))
 
-          :else
-          (if is-parent-left
-            (-> (grandparent node)
-                rotate-right
-                (assoc :color :red)
-                (assoc-in [:left :color] :black))
-            (-> (grandparent node)
-                rotate-left
-                (assoc :color :red)
-                (assoc-in [:right :color] :black))))))))
+        :else
+        (if is-parent-left
+          (-> (grandparent node)
+              rotate-right
+              (assoc :color :red)
+              (assoc-in [:left :color] :black))
+          (-> (grandparent node)
+              rotate-left
+              (assoc :color :red)
+              (assoc-in [:right :color] :black)))))))
 
 ;; ---------- remove functions ----------
 
@@ -232,7 +229,7 @@
 (defn remove [tree value]
   (if-let [root (:root tree)]
     (if (nil? (remove-node root value))
-      (->RedBlackTree nil)
+      (empty-tree)
       (->RedBlackTree (assoc (remove-node root value) :color :black)))
     tree))
 

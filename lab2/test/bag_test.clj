@@ -1,13 +1,19 @@
 (ns bag-test
   (:require [clojure.test :refer [deftest is run-tests]]
-            [bag :refer [add empty-bag filter-bag fold-left fold-right get-contents merge-bags remove-bag]]
-            [core :as tree]
+            [bag :refer [add empty-bag filter-bag fold-left fold-right get-contents merge-bags remove-bag map-bag]]
             [clojure.string :as str]))
 
 (deftest test-add-integers
   (let [bag (empty-bag)
-        updated-bag (add bag 1)]
-    (is (= (get-contents updated-bag) [1]))))
+        updated-bag (-> bag
+                        (add 1)
+                        (add 3)
+                        (add 2)
+                        (add 4)
+                        (add 7)
+                        (add 6)
+                        (add 5))]
+    (is (= (get-contents updated-bag) [1, 2, 3, 4, 5, 6, 7]))))
 
 (deftest test-add-strings
   (let [bag (empty-bag)
@@ -34,7 +40,7 @@
         bag2 (-> (empty-bag)
                  (add 2))
         merged-bag (merge-bags bag1 bag2)]
-    (is (= (tree/inorder-traversal (-> merged-bag :tree :root)) [1 2]))))
+    (is (= (get-contents merged-bag) [1 2]))))
 
 (deftest test-merge-strings
   (let [bag1 (-> (empty-bag)
@@ -42,21 +48,21 @@
         bag2 (-> (empty-bag)
                  (add "prog"))
         merged-bag (merge-bags bag1 bag2)]
-    (is (= (tree/inorder-traversal (-> merged-bag :tree :root)) ["func" "prog"]))))
+    (is (= (get-contents merged-bag) ["func" "prog"]))))
 
 (deftest test-filter-integers
   (let [bag (-> (empty-bag)
                 (add 1)
                 (add 2))
         filtered-bag (filter-bag bag #(= % 1))]
-    (is (= (tree/inorder-traversal (-> filtered-bag :tree :root)) [1]))))
+    (is (= (get-contents filtered-bag) [1]))))
 
 (deftest test-filter-strings
   (let [bag (-> (empty-bag)
                 (add "func")
                 (add "prog"))
         filtered-bag (filter-bag bag #(= % "func"))]
-    (is (= (tree/inorder-traversal (-> filtered-bag :tree :root)) ["func"]))))
+    (is (= (get-contents filtered-bag) ["func"]))))
 
 (deftest test-fold-left-integers
   (let [bag (-> (empty-bag)
@@ -89,14 +95,14 @@
                 (add 51)
                 (add 52)
                 (add 53))
-        mapped-bag (tree/map inc (:tree bag))]
-    (is (= (tree/inorder-traversal mapped-bag) [52 53 54]))))
+        mapped-bag (map-bag bag inc)]
+    (is (= (get-contents mapped-bag) [52 53 54]))))
 
 (deftest test-map-strings
   (let [bag (-> (empty-bag)
                 (add "f")
                 (add "p"))
-        mapped-bag (tree/map str/upper-case (:tree bag))]
-    (is (= (tree/inorder-traversal mapped-bag) ["F" "P"]))))
+        mapped-bag (map-bag bag str/upper-case)]
+    (is (= (get-contents mapped-bag) ["F" "P"]))))
 
 (run-tests)
